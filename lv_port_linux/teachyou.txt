@@ -1,0 +1,70 @@
+main.c中有lvgl各部分初始化
+read文件为读取.gray图片的部分
+/ui文件夹
+其负责ui显示的功能
+uicommon文件是主要界面的主要制作部分，包括顶部栏、中部、底部栏及其相关部分
+ui_history是“历史记录”的创建者
+ui_main负责将各ui文件运用起来
+ui_manger负责将ui_main打包作为一个函数：ui_init传给main.c文件使用
+ui_ocr_page负责将传来的识别结果显示到ui中部右侧
+ui_read负责读取系统使用状态，主要是CPU与NPU占用
+ui_state负责显示当前系统工作处于什么步骤，并显示在ui中部左侧
+/save文件夹
+其负责保存AI识别结果
+/receive文件夹
+config\edit无用
+其负责接收python传来的识别结果
+ai_comm负责初始化网络，接受数据
+ai_parser负责转化cJSON
+ocr_data负责处理数据
+ocr_history负责读取处理lvgl/save文件中保存的历史数据
+ocr_manger负责将得到的数据传输到ui
+ocr_storage负责保存数据，并在main可执行文件所处文件夹的task_index.txt中记录开机次数以便为保存文件改名
+/extern/cjson文件夹
+其保存了cjson文件
+/core文件夹
+其中只有state_machine文件
+负责记录系统的时间，以便提供
+
+
+显示图片
+将命名为HCimage.gray的文件放入lvgl文件夹中
+需要将图片显示在（ui_common.c）中的ui_naka函数中naka（即中部显示区域）的第一个子部件：img_area中
+这是示例代码：
+    lv_obj_t *child = lv_obj_get_child(naka, 0);
+        lv_obj_t *na = show_raw_from_file("/home/elf/lvgl/HCimage.gray",child); 
+        lv_obj_set_scrollbar_mode(na, LV_SCROLLBAR_MODE_OFF);
+        lv_obj_set_style_img_recolor_opa(na, LV_OPA_0, 0);
+        lv_obj_set_style_opa(na, LV_OPA_COVER, 0);
+其中，child就是从naka中获取的第一个子部件————img_area。
+并创建"na"作为HCimage.gray的所在
+其下三行照搬即可
+
+此部分只需包含lvgl/lvgl与read文件即可
+
+
+关闭图片
+使用image_close()
+不必再多包含文件
+
+更新图片需要先关闭图片再打开图片
+
+
+显示系统当前工作步骤
+使用void state_machine_set(system_state_t state, uint8_t is_error)
+state为当前所在步骤（从0开始）
+当前有等待、发现、拍照、处理、识别、保存、完成等步骤
+文字已更新，更换ui_state文件即可
+error为错误
+正常时赋值0
+出错时赋值1
+回归正常再次给error赋值0
+相关代码在core中
+
+
+传递识别结果
+python方面向字典内传数据后发送，lvgl自动可以接收到
+python若要一次发送多个识别结果，使用按原样式创建数据后将这俩一起发送即可
+
+
+
